@@ -102,6 +102,9 @@ Form
 		}
 	
 	Group {
+
+		info: qsTr("Available only when Method is set to 'Nearest'")
+
 		title: qsTr("Caliper")
 
 		CheckBox {
