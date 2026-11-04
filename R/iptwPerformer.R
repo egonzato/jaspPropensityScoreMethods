@@ -1,21 +1,31 @@
 # solve based on how formula is pointed out
 .resolveTreatmentModel = function(options) {
-  hasCustom = !is.null(options$customFormula$model) &&
-    nchar(trimws(options$customFormula$model)) > 0
+  customText = trimws(options$customFormula$model)
+  hasCustom  = !is.null(customText) && length(customText) == 1 &&
+    nchar(customText) > 0 && !grepl("^~\\s*$", customText)
 
   if (hasCustom) {
-    f = tryCatch(as.formula(options$customFormula$model), error = function(e) e)
-    if (inherits(f, "error")) {
-      return(list(error = gettextf("Could not parse the custom formula: %s", f$message)))
-    }
-    treatment  = all.vars(f[[2]])                       # LHS variable name
-    covariates = all.vars(delete.response(terms(f)))    # RHS variable names, stripped of ns()/I()/etc.
-  } else {
-    treatment  = options$treatment
-    covariates = options$confounders
-    f = as.formula(paste0(treatment, "~", paste(covariates, collapse = " + ")))
+    parsed = tryCatch({
+      f = as.formula(customText)
+      if (length(f) != 3)
+        stop(gettext("the formula needs a treatment on the left-hand side, e.g. treat ~ x1 + x2"))
+      list(formula = f,
+           treatment = all.vars(f[[2]]),
+           covariates = all.vars(delete.response(terms(f))))
+    }, error = function(e) e)
+
+    if (inherits(parsed, "error"))
+      return(list(error = gettextf("Could not parse the custom formula: %s", conditionMessage(parsed))))
+
+    return(c(parsed, list(error = NULL)))
   }
 
+  treatment  = options$treatment
+  covariates = options$confounders
+  if (length(treatment) == 0 || length(covariates) == 0)
+    return(list(formula = NULL, treatment = treatment, covariates = covariates, error = NULL))
+
+  f = as.formula(paste0(treatment, "~", paste(covariates, collapse = " + ")))
   list(formula = f, treatment = treatment, covariates = covariates, error = NULL)
 }
 # density of weights plot
@@ -187,8 +197,43 @@
   table$addRows(df)
   jaspResults[["essTable"]]=table
 }
+# save weighted dataset
+.saveWeightedDataset=function(jaspResults, dataset, options) {
+  if (nchar(options$saveDatasetPath) == 0)
+    return()
+
+  model = .resolveTreatmentModel(options)
+
+  # read every column, applying the same listwise deletion as the analysis
+  # so that the rows line up with the weights
+  full = .readDataSetToEnd(all.columns = TRUE,
+                           exclude.na.listwise = c(model$treatment, model$covariates))
+
+  if (nrow(full) != nrow(dataset)) {
+    jaspResults$setError(gettext("Could not save the dataset: the row counts do not match."))
+    return()
+  }
+
+  full$weight = dataset$weight
+  colnames(full) = jaspBase::decodeColNames(colnames(full))
+
+  res=tryCatch(
+    utils::write.csv(full, file = options$saveDatasetPath, row.names = FALSE),
+    error = function(e) e
+  )
+
+  if (inherits(res, "error"))
+    jaspResults$setError(gettextf("Could not save the dataset: %s", res$message))
+}
 # weighting function
 iptw=function(jaspResults, dataset, options) {
+  # nothing to do until  treatment is assigned
+  if (length(options$treatment) == 0) return()
+  # define hasCustom and also what should be returned
+  hasCustom = !is.null(options$customFormula$model) &&
+    nchar(trimws(options$customFormula$model)) > 0
+  if (length(options$confounders) == 0 && !hasCustom) return()
+
   model = .resolveTreatmentModel(options)
   if (!is.null(model$error)) { jaspResults$setError(model$error); return() }
   if (length(model$treatment) == 0) return()
@@ -228,4 +273,6 @@ iptw=function(jaspResults, dataset, options) {
   .createIptwDensities(jaspResults, dataset, options)
   .createIptwLovePlot(jaspResults, dataset, options)
   .createPSOverlapPlot(jaspResults, dataset, options)
+  # save dataset
+  .saveWeightedDataset(jaspResults, dataset, options)
 }

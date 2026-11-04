@@ -15,6 +15,10 @@
 // License along with this program.  If not, see
 // <http://www.gnu.org/licenses/>.
 //
+
+//JASP power
+
+
 import QtQuick
 import QtQuick.Layouts
 import JASP.Controls
@@ -152,7 +156,7 @@ Form
 	// 		checked: true
 	// 	}
 	// }
-	Group {
+Group {
     title: qsTr("Plot colors")
 
     Column {
@@ -183,6 +187,17 @@ Form
         }
     }
 }
+Group
+{
+    title: qsTr("Export")
 
-
+    FileSelector
+    {
+        name: "saveDatasetPath"
+        label: qsTr("Save matched dataset as")
+        filter: "*.csv"
+        save: true
+        fieldWidth: 200 * jaspTheme.uiScale
+    }
+}
 }

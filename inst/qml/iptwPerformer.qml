@@ -148,5 +148,19 @@ Form
     }
 }
 
+Group
+{
+    title: qsTr("Export")
+
+    FileSelector
+    {
+        name: "saveDatasetPath"
+        label: qsTr("Save weighted dataset as")
+        filter: "*.csv"
+        save: true
+        fieldWidth: 200 * jaspTheme.uiScale
+        info: qsTr("Saves the dataset with the IPTW weights added as a column (CSV)")
+    }
+}
 
 }

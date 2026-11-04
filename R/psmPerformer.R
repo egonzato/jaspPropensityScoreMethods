@@ -179,7 +179,38 @@
   jaspResults[["densityPlot"]] = densityPlot
   densityPlot$plotObject = densityGrobs
 }
+# save matched dataset (all columns)
+.saveMatchedDataset=function(jaspResults, dataset, matched, options) {
+  if (nchar(options$saveDatasetPath) == 0)
+    return()
 
+  # read every column, with the same listwise deletion as the analysis
+  vars = all.vars(matched$formula)
+  full = .readDataSetToEnd(all.columns = TRUE, exclude.na.listwise = vars)
+
+  if (nrow(full) != nrow(dataset)) {
+    jaspResults$setError(gettext("Could not save the dataset: the row counts do not match."))
+    return()
+  }
+
+  # attach matching information (aligned with the rows passed to matchit)
+  full$weights = matched$weights
+  if (!is.null(matched$subclass)) full$subclass = matched$subclass
+  if (!is.null(matched$distance)) full$distance = matched$distance
+
+  # keep matched rows only, as match.data() does
+  full = full[matched$weights > 0, , drop = FALSE]
+
+  colnames(full) = jaspBase::decodeColNames(colnames(full))
+
+  res=tryCatch(
+    utils::write.csv(full, file = options$saveDatasetPath, row.names = FALSE),
+    error = function(e) e
+  )
+
+  if (inherits(res, "error"))
+    jaspResults$setError(gettextf("Could not save the dataset: %s", res$message))
+}
 # matching performer
 matching=function(jaspResults,dataset,options){
   if (length(options$treatment) == 0) return()
@@ -235,5 +266,7 @@ matching=function(jaspResults,dataset,options){
   .createDensities(jaspResults,dataset,matched,options)
   # love plot
   .createLovePlot(jaspResults,matched,options)
+  # save dataset
+  .saveMatchedDataset(jaspResults, dataset, matched, options)
 }
 
