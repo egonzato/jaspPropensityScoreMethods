@@ -25,7 +25,7 @@ import "./common/ui" as UI
 Form
 {
 
-  info: qsTr("")
+  info: qsTr("Inverse probability of treatment weighting gives each unit a weight equal to the inverse of its estimated probability of receiving the treatment it actually received. In the weighted sample the confounders are balanced between treated and untreated units. The output shows a summary of the weights, standardised mean differences, the effective sample size, covariate distributions, a love plot and the propensity score overlap.")
 
   Text
   {
@@ -37,13 +37,14 @@ Form
 		preferredHeight: jaspTheme.smallDefaultVariablesFormHeight
 		infoLabel: qsTr("Input")
 		AvailableVariablesList{  name: "allVariablesList" }
-		AssignedVariablesList {  name: "treatment"; title: qsTr("Treatment"); allowedColumns: ["nominal"]; info: qsTr("Treatment variable") ; singleVariable: true; minLevels: 2}
-		AssignedVariablesList {  name: "confounders"; title: qsTr("Confounders"); allowedColumns: ["scale","nominal","ordinal"]; info: qsTr("Confounders")}
+		AssignedVariablesList {  name: "treatment"; title: qsTr("Treatment"); allowedColumns: ["nominal"]; info: qsTr("Binary variable indicating whether a unit received the treatment (1) or not (0).") ; singleVariable: true; minLevels: 2}
+		AssignedVariablesList {  name: "confounders"; title: qsTr("Confounders"); allowedColumns: ["scale","nominal","ordinal"]; info: qsTr("Variables that affect both treatment assignment and the outcome. They are used to estimate the propensity score and to assess balance.")}
 	}
 	
 	Group {
 		Layout.columnSpan: 2
 		title: qsTr("Non-linear specification of the treatment model (overrides confounders specification)")
+		info: qsTr("Optional R formula for the treatment model, e.g. treatment ~ age + I(age^2) + sex. When filled in, it is used instead of the confounders listed above.")
 
 		TextArea {
 			name: "customFormula"
@@ -66,8 +67,9 @@ Form
 
 		CheckBox
 		{
-			name: "stabilize"         
+			name: "stabilize"
 			label: qsTr("Stabilize weights")
+			info: qsTr("Uses the marginal probability of treatment as the numerator of the weights instead of 1. Stabilized weights have a mean close to 1 and lower variance.")
 			checked: false
 		}
 	}
@@ -75,14 +77,17 @@ Form
 		title: qsTr("Truncating weights")
 		CheckBox{
 			
+				id: truncateEnabled
 				name: "truncateEnabled"
 				label: qsTr("Truncate")
+				info: qsTr("Limits extreme weights by setting weights below the lower percentile and above the upper percentile to those percentile values.")
 				checked: false
 		}	
 		DoubleField {
 			name: "truncate"
 			enabled: truncateEnabled.checked
 			label: qsTr("Percentile to truncate")
+			info: qsTr("Percentile used for truncation, e.g. 0.01 truncates weights at the 1st and 99th percentiles.")
 			defaultValue: 0.01
 			fieldWidth: 50
 			max: 1

@@ -5,7 +5,7 @@ Description
 {
 	name		: "jaspPropensityScoreMethods"
 	title		: qsTr("Propensity Score Methods")
-	description	: qsTr("Examples for module builders")
+	description	: qsTr("Causal inference with propensity score methods: matching and inverse probability of treatment weighting.")
 	version		: "0.1"
 	author		: "JASP Team"
 	maintainer	: "JASP Team <info@jasp-stats.org>"

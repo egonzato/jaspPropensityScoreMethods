@@ -4,7 +4,7 @@ This module was developed during the first JASP hackathon, in February 2026.
 
 ## Introduction
 
-To make use of observational data, causal inference methods are often employed to make two groups comparable. Several approaches are used to recreate clinical-trial like settings from data gathered during daily clinical practice. Among these, propensity score matching (psm) and inverse propability of treatment weighting (iptw), which can both be labelled under the same umbrella as propensity score methods.
+To make use of observational data, causal inference methods are often employed to make two groups comparable. Several approaches are used to recreate clinical-trial like settings from data gathered during daily clinical practice. Among these, propensity score matching (psm) and inverse probability of treatment weighting (iptw), which can both be labelled under the same umbrella as propensity score methods.
 
 ## What are Propensity Score Methods
 
@@ -19,27 +19,19 @@ For psm, the following options are available:
 
 * Treatment model specification: linear and/or non-linear form for confounders.
 * Distance measure: Probability, Logit, Mahalanobis distance
-* Method: matching can be performed starting from treated units with the highest probability of treatment ('nearest') or minimizing the distance in the distance chosen ('optimal')
+* Method: matching can be performed starting from treated units with the highest probability of treatment ('nearest') or by minimizing the total distance across all pairs ('optimal').
 * Ratio: number of untreated units to look for each treated unit.
-* Caliper: available only when the selected distance measure is either "Probability" or "Logit", specifies the maximum distance in distance measure between treated and untreated units for matching.
+* Caliper: available only when the method is "Nearest". Specifies the maximum distance (in standard deviations of the propensity score) between matched treated and untreated units. When the Mahalanobis distance is selected, a propensity score is estimated only to apply the caliper.
 * Replacement: untreated units can be used multiple times in matching with replacement, or only once if without replacement.
+* Export: the matched dataset (all columns, plus weights, subclass and distance) can be saved as a CSV file.
 
 For inverse probability of treatment weighting, the following options are available:
 
 * Treatment model specification: linear and/or non-linear form for confounders.
-* Stabilize weights: whether weights should be stabilizing by using mean probability of treatment as numerator of treatment weights or 1 (unstabilized weights)
-* Truncate weights: whether tails of the distributions of weights should be truncated, given certain percentiles.
+* Stabilize weights: whether weights should be stabilized by using the mean probability of treatment as numerator of the treatment weights, or 1 (unstabilized weights).
+* Truncate weights: whether the tails of the distribution of weights should be truncated at given percentiles.
+* Export: the dataset with the IPTW weights added as a column can be saved as a CSV file.
 
-## To do
+## Future work
 
-* Sum up and ask for help
-
-### Need help
-
-* For psm:
-
-  * Gray-out "caliper" when method is set to "Optimal"
-  * Save selected dataset
-* For iptw:
-
-  * Bootstrapping analysis for iptw standard errors or save dataset
+* Bootstrapped standard errors for IPTW estimates.

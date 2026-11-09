@@ -9,7 +9,7 @@
   df=df[, -8]
   # Auto table from data.frame
   table=createJaspTable(title = gettext("Confounders balance before matching"))
-  table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula","caliper",
+  table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula","caliper","caliperEnabled",
                    "distance_dropdown","ratio", "replacement", "distance"))
   table$setExpectedSize(nrow(df), length(colnames(df)))
   # Add all data
@@ -26,7 +26,7 @@
   df=df[, c("Covariate", colnames(summatch))]
   # Auto table from data.frame
   table=createJaspTable(title = gettext("Confounders balance after matching"))
-  table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula","caliper",
+  table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula","caliper","caliperEnabled",
                  "distance_dropdown","ratio", "replacement", "distance"))
   table$setExpectedSize(nrow(df), length(colnames(df)))
   # Add all data
@@ -43,7 +43,7 @@
   df=df[, c("Sample", colnames(sumnn))]
   # Auto table from data.frame
   table=createJaspTable(title = gettext("Sample sizes"))
-  table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula","caliper",
+  table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula","caliper","caliperEnabled",
                    "distance_dropdown","ratio", "replacement", "distance"))
   table$setExpectedSize(nrow(df), length(colnames(df)))
   # Add all data
@@ -60,7 +60,7 @@
     ggplot2::theme(legend.position = 'bottom')
   # create jasp graph
   lovePlot=createJaspPlot(title = gettext("Love Plot"), width = 400, height = 500)
-  lovePlot$dependOn(c("method_dropdown","treatment","confounders","customFormula","caliper",
+  lovePlot$dependOn(c("method_dropdown","treatment","confounders","customFormula","caliper","caliperEnabled",
                          "distance_dropdown","ratio","replacement"))
   lovePlot$info=gettext("This figure displays a the standardized mean difference for all the confounders considered")
   jaspResults[["lovePlot"]]=lovePlot
@@ -170,7 +170,7 @@
   # create JASP plot
   densityPlot = createJaspPlot(title = gettext("Density Plot"), width = 400, height = 500)
 
-  densityPlot$dependOn(c("method_dropdown","treatment","confounders","caliper",
+  densityPlot$dependOn(c("method_dropdown","treatment","confounders","caliper","caliperEnabled",
     "distance_dropdown","ratio","replacement","opacity","customFormula",
     "untreatedColor","treatedColor"))
 
@@ -181,6 +181,8 @@
 }
 # save matched dataset (all columns)
 .saveMatchedDataset=function(jaspResults, dataset, matched, options) {
+  # drop a notice left over from an earlier failed export
+  jaspResults[["saveDatasetNotice"]] = NULL
   if (nchar(options$saveDatasetPath) == 0)
     return()
 
@@ -189,7 +191,7 @@
   full = .readDataSetToEnd(all.columns = TRUE, exclude.na.listwise = vars)
 
   if (nrow(full) != nrow(dataset)) {
-    jaspResults$setError(gettext("Could not save the dataset: the row counts do not match."))
+    .saveDatasetNotice(jaspResults, gettext("Could not save the dataset: the row counts do not match."))
     return()
   }
 
@@ -209,7 +211,14 @@
   )
 
   if (inherits(res, "error"))
-    jaspResults$setError(gettextf("Could not save the dataset: %s", res$message))
+    .saveDatasetNotice(jaspResults, gettextf("Could not save the dataset: %s", res$message))
+}
+# report a failed export without discarding the analysis output
+.saveDatasetNotice=function(jaspResults, message) {
+  notice=createJaspHtml(text = message, elementType = "errorMsg")
+  notice$dependOn(c("saveDatasetPath"))
+  notice$position=99
+  jaspResults[["saveDatasetNotice"]]=notice
 }
 # matching performer
 matching=function(jaspResults,dataset,options){
@@ -230,7 +239,8 @@ matching=function(jaspResults,dataset,options){
   distance_lower=dplyr::case_when(stringr::str_to_lower(options$distance_dropdown)=='probability'~'glm',
                                   stringr::str_to_lower(options$distance_dropdown)=='logit'~'logit',
                                   T~'mahalanobis')
-  if (isTRUE(options$caliperEnabled)) {
+  # caliper is only meaningful for nearest neighbour matching
+  if (isTRUE(options$caliperEnabled) && stringr::str_to_lower(options$method_dropdown) == "nearest") {
     caliper_null = options$caliper
     if (distance_lower %in% c("glm", "logit")) {
       matching_distance = distance_lower

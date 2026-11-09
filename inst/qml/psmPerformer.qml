@@ -29,7 +29,7 @@ import "./common/ui" as UI
 Form
 {
 
-  info: qsTr("")
+  info: qsTr("Propensity score matching pairs treated and untreated units with similar propensity scores (or covariate values), creating a matched sample in which the confounders are balanced between the two groups. The output shows covariate balance before and after matching, the sample sizes, a love plot and the distribution of the covariates in both groups.")
 
   Text
   {
@@ -41,13 +41,14 @@ Form
 		preferredHeight: jaspTheme.smallDefaultVariablesFormHeight
 		infoLabel: qsTr("Input")
 		AvailableVariablesList{  name: "allVariablesList" }
-		AssignedVariablesList {  name: "treatment"; title: qsTr("Treatment"); allowedColumns: ["nominal"]; info: qsTr("Treatment variable") ; singleVariable: true; minLevels: 2}
-		AssignedVariablesList {  name: "confounders"; title: qsTr("Confounders"); allowedColumns: ["scale","nominal","ordinal"]; info: qsTr("Confounders")}
+		AssignedVariablesList {  name: "treatment"; title: qsTr("Treatment"); allowedColumns: ["nominal"]; info: qsTr("Binary variable indicating whether a unit received the treatment (1) or not (0).") ; singleVariable: true; minLevels: 2}
+		AssignedVariablesList {  name: "confounders"; title: qsTr("Confounders"); allowedColumns: ["scale","nominal","ordinal"]; info: qsTr("Variables that affect both treatment assignment and the outcome. They are used to estimate the propensity score and to assess balance.")}
 	}
 	// treatment formula
 	Group {
 		Layout.columnSpan: 2
 		title: qsTr("Non-linear specification of the treatment model (overrides confounders specification)")
+		info: qsTr("Optional R formula for the treatment model, e.g. treatment ~ age + I(age^2) + sex. When filled in, it is used instead of the confounders listed above.")
 
 		TextArea {
 			name: "customFormula"
@@ -71,14 +72,15 @@ Form
 
 		CheckBox
 		{
-			name: "replacement"           // Single boolean option
+			name: "replacement"
 			label: qsTr("With replacement")
+			info: qsTr("When checked, an untreated unit can be matched to more than one treated unit. When unchecked, each untreated unit is used at most once.")
 			checked: false
 		}
 
 		DropDown
 		{
-			info: qsTr("This is a dropdown that allows the user to decide which distance to use for the procedure")
+			info: qsTr("Distance measure used to decide how similar two units are: the estimated probability of treatment, its logit, or the Mahalanobis distance computed on the confounders.")
 
 			name: "distance_dropdown"
 			label: qsTr("Distance")
@@ -86,15 +88,16 @@ Form
 		}
 		DropDown
 		{
-			info: qsTr("This is a dropdown that allows the user to decide which method to use for the procedure")
+			info: qsTr("Matching algorithm. 'Nearest' matches each treated unit in turn to the closest available untreated unit(s). 'Optimal' finds the matching that minimises the total distance across all pairs.")
 
+			id: methodDropdown
 			name: "method_dropdown"
 			label: qsTr("Method")
 			values: ["Nearest", "Optimal"]
 		}
 		IntegerField
 		{
-			info: qsTr("This is the number that will be used as ratio for matching")
+			info: qsTr("Number of untreated units to match to each treated unit.")
 
 			name: "ratio"
 			label: qsTr("Ratio")   
@@ -107,11 +110,13 @@ Form
 	
 	Group {
 
-		info: qsTr("Available only when Method is set to 'Nearest'")
+		info: qsTr("Maximum allowed distance between matched units, expressed in standard deviations of the propensity score. With the Mahalanobis distance, a propensity score is estimated only to apply the caliper. Available only when Method is set to 'Nearest'.")
 
 		title: qsTr("Caliper")
+		enabled: methodDropdown.currentValue === "Nearest"
 
 		CheckBox {
+			id: caliperEnabled
 			name: "caliperEnabled"
 			label: qsTr("Use caliper")
 			checked: false
@@ -197,6 +202,7 @@ Group
         label: qsTr("Save matched dataset as")
         filter: "*.csv"
         save: true
+        info: qsTr("Saves the matched units with all dataset columns, plus the matching weights, subclass and distance (CSV).")
         fieldWidth: 200 * jaspTheme.uiScale
     }
 }

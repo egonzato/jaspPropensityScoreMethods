@@ -199,6 +199,8 @@
 }
 # save weighted dataset
 .saveWeightedDataset=function(jaspResults, dataset, options) {
+  # drop a notice left over from an earlier failed export
+  jaspResults[["saveDatasetNotice"]] = NULL
   if (nchar(options$saveDatasetPath) == 0)
     return()
 
@@ -210,7 +212,7 @@
                            exclude.na.listwise = c(model$treatment, model$covariates))
 
   if (nrow(full) != nrow(dataset)) {
-    jaspResults$setError(gettext("Could not save the dataset: the row counts do not match."))
+    .saveDatasetNotice(jaspResults, gettext("Could not save the dataset: the row counts do not match."))
     return()
   }
 
@@ -223,7 +225,7 @@
   )
 
   if (inherits(res, "error"))
-    jaspResults$setError(gettextf("Could not save the dataset: %s", res$message))
+    .saveDatasetNotice(jaspResults, gettextf("Could not save the dataset: %s", res$message))
 }
 # weighting function
 iptw=function(jaspResults, dataset, options) {
