@@ -22,7 +22,6 @@
 import QtQuick
 import QtQuick.Layouts
 import JASP.Controls
-import JASP.Widgets
 import JASP
 import "./common/ui" as UI
 
@@ -40,7 +39,7 @@ Form
 	{
 		preferredHeight: jaspTheme.smallDefaultVariablesFormHeight
 		infoLabel: qsTr("Input")
-		AvailableVariablesList{  name: "allVariablesList" }
+		AvailableVariablesList{  id: allVariablesList; name: "allVariablesList" }
 		AssignedVariablesList {  name: "treatment"; title: qsTr("Treatment"); allowedColumns: ["nominal"]; info: qsTr("Binary variable indicating whether a unit received the treatment (1) or not (0).") ; singleVariable: true; minLevels: 2}
 		AssignedVariablesList {  name: "confounders"; title: qsTr("Confounders"); allowedColumns: ["scale","nominal","ordinal"]; info: qsTr("Variables that affect both treatment assignment and the outcome. They are used to estimate the propensity score and to assess balance.")}
 	}
@@ -59,9 +58,9 @@ Form
 		}
 
 		Text {
-			text: qsTr("ℹ️ Available variables: ") + "'" + allVariablesList.valueNames.join("', '") + "'"
+			text: qsTr("ℹ️ Available variables: ") + "'" + (allVariablesList.columnsNames || []).join("', '") + "'"
 			font.pointSize: 9
-			color: jaspTheme.moderateGray
+			color: jaspTheme.grayDarker
 			wrapMode: Text.WordWrap
 		}
 	}	
