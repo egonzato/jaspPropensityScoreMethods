@@ -1,12 +1,15 @@
 Package: jaspPropensityScoreMethods
 Type: Package
-Title: A module for JASP
+Title: Propensity Score Methods for JASP
 Version: 0.1.0
-Date: 2026-04-18
-Author: JASP Team
-Website: jasp-stats.org
-Maintainer: JASP Team <info@jasp-stats.org>
-Description: Module that allows to perform causal inference methods, such as matching and weighting, based on propensity score metrics, like probability of treatment assignment or Mahalanobis distance.
+Date: 2026-11-15
+Author: egonzato
+URL: https://github.com/egonzato/jaspPropensityScoreMethods
+BugReports: https://github.com/egonzato/jaspPropensityScoreMethods/issues
+Maintainer: egonzato <139107666+egonzato@users.noreply.github.com>
+Description: Causal inference with propensity score methods in JASP: propensity score matching
+  (nearest neighbour or optimal, on the propensity score, its logit or the Mahalanobis distance)
+  and inverse probability of treatment weighting, with covariate balance diagnostics.
 License: GPL (>= 2)
 Encoding: UTF-8
 Imports:

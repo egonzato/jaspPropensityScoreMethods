@@ -19,7 +19,6 @@ import QtQuick
 import QtQuick.Layouts
 import JASP.Controls
 import JASP
-import "./common/ui" as UI
 
 Form
 {
@@ -94,32 +93,6 @@ Form
 		}
 	}
 
-	// Group
-	// {
-	// 	title: qsTr("Covariate balance")
-
-	// 	CheckBox
-	// 	{
-	// 		info: qsTr("This tick mark defines whether the summary of the proedure will be displayed or not")
-	// 		name: "distance"
-	// 		label: qsTr("Summary distance measures")
-	// 		checked: true
-	// 	}
-	// 	CheckBox
-	// 	{
-	// 		info: qsTr("Display love plot")
-	// 		name: "love"
-	// 		label: qsTr("Love plot")
-	// 		checked: true 
-	// 	}
-	// 	CheckBox
-	// 	{
-	// 		info: qsTr("Display distributions of covariates in treated and untreated, before and after matching")
-	// 		name: "densitites"
-	// 		label: qsTr("Density plot")
-	// 		checked: true
-	// 	}
-	// }
 	Group {
     title: qsTr("Plot colors")
 

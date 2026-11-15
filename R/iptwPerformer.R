@@ -31,7 +31,7 @@
 # density of weights plot
 .createIptwDensities=function(jaspResults, dataw, options) {
   model = .resolveTreatmentModel(options)
-  if (!is.null(model$error)) { jaspResults$setError(model$error); return() }
+  if (!is.null(model$error)) .quitAnalysis(model$error)
   treatment = model$treatment
   # add treatment column to dataset with factor format
   dataw$treatment_label = as.factor(dataw[[treatment]])
@@ -51,16 +51,17 @@
   legend_grob = cowplot::get_legend(p + ggplot2::theme(legend.position = "bottom"))
   final = gridExtra::arrangeGrob(p_nolegend, legend_grob, ncol = 1, heights = c(10, 1))
   # create JASP plot
-  weightPlot=createJaspPlot(title = "Weight Densities", width = 400, height = 300)
+  weightPlot=createJaspPlot(title = gettext("Weight Densities"), width = 400, height = 300)
   weightPlot$dependOn(c("treatment", "confounders", "stabilize", "truncateEnabled", "customFormula",
                         "opacity", "untreatedColor", "treatedColor"))
+  weightPlot$info=gettext("Distribution of the IPTW weights in the treated and untreated groups. Very large weights indicate units with extreme propensity scores, which can make estimates unstable; consider stabilizing or truncating the weights.")
   weightPlot$plotObject=final
   jaspResults[["weightDensities"]]=weightPlot
 }
 # love plot
 .createIptwLovePlot=function(jaspResults, dataset, options) {
   model = .resolveTreatmentModel(options)
-  if (!is.null(model$error)) { jaspResults$setError(model$error); return() }
+  if (!is.null(model$error)) .quitAnalysis(model$error)
   treatment = model$treatment
   f = model$formula
   w = dataset$weight
@@ -78,13 +79,14 @@
   lovePlot=createJaspPlot(title = gettext("Love Plot"), width = 400, height = 400)
   lovePlot$dependOn(c("treatment", "confounders", "stabilize", "truncateEnabled","customFormula",
                       "truncate", "untreatedColor", "treatedColor"))
+  lovePlot$info=gettext("Standardized mean differences of each confounder before and after weighting. The dashed lines mark the commonly used balance threshold of 0.1.")
   lovePlot$plotObject=final
   jaspResults[["iptwLovePlot"]]=lovePlot
 }
 # propensity score overlap plot
 .createPSOverlapPlot=function(jaspResults, dataset, options) {
   model = .resolveTreatmentModel(options)
-  if (!is.null(model$error)) { jaspResults$setError(model$error); return() }
+  if (!is.null(model$error)) .quitAnalysis(model$error)
   treatment = model$treatment
   f = model$formula
   # compute model
@@ -112,13 +114,14 @@
   # create JASP plot
   psPlot=createJaspPlot(title=gettext("Propensity Score Overlap"), width = 400, height = 300)
   psPlot$dependOn(c("treatment", "confounders", "customFormula","opacity", "untreatedColor", "treatedColor"))
+  psPlot$info=gettext("Distribution of the estimated propensity scores in the treated and untreated groups. Good overlap (common support) between the two distributions is needed for weighting to give reliable estimates.")
   psPlot$plotObject=final
   jaspResults[["psOverlapPlot"]]=psPlot
 }
 # weight summary table
 .createWeightSummaryTable=function(jaspResults, dataw, options) {
   model = .resolveTreatmentModel(options)
-  if (!is.null(model$error)) { jaspResults$setError(model$error); return() }
+  if (!is.null(model$error)) .quitAnalysis(model$error)
   treatment = model$treatment
   f = model$formula
   w = dataw$weight
@@ -140,6 +143,7 @@
   df=do.call(rbind, rows)
   # create JASP table
   table=createJaspTable(title = gettext("Weight Summary"))
+  table$info=gettext("Number of units and the minimum, maximum, mean, median and standard deviation of the weights in the treated and untreated groups.")
   table$dependOn(c("treatment", "confounders", "stabilize", "customFormula","truncateEnabled", "truncate"))
   table$addRows(df)
   jaspResults[["weightSummary"]]=table
@@ -148,7 +152,7 @@
 .createSMDTable=function(jaspResults, dataset, options) {
   # define columns needed
   model = .resolveTreatmentModel(options)
-  if (!is.null(model$error)) { jaspResults$setError(model$error); return() }
+  if (!is.null(model$error)) .quitAnalysis(model$error)
   treatment = model$treatment
   f = model$formula
   w = dataset$weight
@@ -166,6 +170,7 @@
   df[, 2:3]=round(df[, 2:3], 3)
   # create JASP table
   table=createJaspTable(title = gettext("Standardized Mean Differences"))
+  table$info=gettext("Standardized mean differences of each confounder before and after weighting. Values close to 0 (commonly below 0.1 in absolute value) indicate good balance.")
   table$dependOn(c("treatment", "confounders", "stabilize","customFormula", "truncateEnabled", "truncate"))
   table$addRows(df)
   jaspResults[["smdTable"]]=table
@@ -174,7 +179,7 @@
 .createESSTable=function(jaspResults, dataset, options) {
   # define column needed
   model = .resolveTreatmentModel(options)
-  if (!is.null(model$error)) { jaspResults$setError(model$error); return() }
+  if (!is.null(model$error)) .quitAnalysis(model$error)
   treatment = model$treatment
   f = model$formula
   w = dataset$weight
@@ -193,6 +198,7 @@
                 check.names=FALSE)
   # create JASP table
   table=createJaspTable(title = gettext("Effective Sample Size"))
+  table$info=gettext("Effective sample size (ESS) of each group after weighting, computed as (sum of weights)^2 / sum of squared weights. A low ESS relative to N means that a few units carry most of the weight.")
   table$dependOn(c("treatment", "confounders", "stabilize","customFormula", "truncateEnabled", "truncate"))
   table$addRows(df)
   jaspResults[["essTable"]]=table
@@ -237,11 +243,13 @@ iptw=function(jaspResults, dataset, options) {
   if (length(options$confounders) == 0 && !hasCustom) return()
 
   model = .resolveTreatmentModel(options)
-  if (!is.null(model$error)) { jaspResults$setError(model$error); return() }
+  if (!is.null(model$error)) .quitAnalysis(model$error)
   if (length(model$treatment) == 0) return()
   if (length(model$covariates) == 0) return()
   treatment = model$treatment
   f = model$formula
+  # treatment must be coded 0/1
+  .checkTreatmentCoding(dataset, treatment)
   # compute treatment model
   den_model=glm(f, data = dataset, family = binomial(link = "logit"))
   # predict propensity score

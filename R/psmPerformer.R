@@ -8,7 +8,8 @@
   df=df[, c("Covariate", colnames(sumall))]
   df=df[, -8]
   # Auto table from data.frame
-  table=createJaspTable(title = gettext("Confounders balance before matching"))
+  table=createJaspTable(title = gettext("Covariate balance before matching"))
+  table$info=gettext("Means of each confounder in the treated and untreated groups in the original dataset, with the standardized mean difference, variance ratio and empirical cumulative distribution function (eCDF) statistics. Large differences indicate imbalance between the groups.")
   table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula","caliper","caliperEnabled",
                    "distance_dropdown","ratio", "replacement", "distance"))
   table$setExpectedSize(nrow(df), length(colnames(df)))
@@ -25,7 +26,8 @@
   df$Covariate=rownames(summatch)
   df=df[, c("Covariate", colnames(summatch))]
   # Auto table from data.frame
-  table=createJaspTable(title = gettext("Confounders balance after matching"))
+  table=createJaspTable(title = gettext("Covariate balance after matching"))
+  table$info=gettext("The same balance statistics as before matching, computed on the matched dataset. Standardized mean differences close to 0 (commonly below 0.1 in absolute value) indicate good balance.")
   table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula","caliper","caliperEnabled",
                  "distance_dropdown","ratio", "replacement", "distance"))
   table$setExpectedSize(nrow(df), length(colnames(df)))
@@ -43,6 +45,7 @@
   df=df[, c("Sample", colnames(sumnn))]
   # Auto table from data.frame
   table=createJaspTable(title = gettext("Sample sizes"))
+  table$info=gettext("Number of treated and untreated units in the original data, the number matched (also as effective sample size, ESS), and the number left unmatched or discarded.")
   table$dependOn(c("method_dropdown", "treatment", "confounders","customFormula","caliper","caliperEnabled",
                    "distance_dropdown","ratio", "replacement", "distance"))
   table$setExpectedSize(nrow(df), length(colnames(df)))
@@ -62,7 +65,7 @@
   lovePlot=createJaspPlot(title = gettext("Love Plot"), width = 400, height = 500)
   lovePlot$dependOn(c("method_dropdown","treatment","confounders","customFormula","caliper","caliperEnabled",
                          "distance_dropdown","ratio","replacement"))
-  lovePlot$info=gettext("This figure displays a the standardized mean difference for all the confounders considered")
+  lovePlot$info=gettext("Standardized mean differences of each confounder before and after matching. The dashed lines mark the commonly used balance threshold of 0.1.")
   jaspResults[["lovePlot"]]=lovePlot
   lovePlot$plotObject=loveplotmatched
 }
@@ -174,7 +177,7 @@
     "distance_dropdown","ratio","replacement","opacity","customFormula",
     "untreatedColor","treatedColor"))
 
-  densityPlot$info = gettext("This figure displays the distribution of the covariates in treated and untreated groups.")
+  densityPlot$info = gettext("Distribution of each confounder in the treated and untreated groups, in the original dataset (left) and in the matched dataset (right).")
 
   jaspResults[["densityPlot"]] = densityPlot
   densityPlot$plotObject = densityGrobs
@@ -229,12 +232,13 @@ matching=function(jaspResults,dataset,options){
   if (hasCustom) {
     f = tryCatch(as.formula(options$customFormula$model), error = function(e) e)
     if (inherits(f, "error")) {
-      jaspResults$setError(gettextf("Could not parse the custom formula: %s", f$message))
-      return()
+      .quitAnalysis(gettextf("Could not parse the custom formula: %s", f$message))
     }
   } else {
     f=as.formula(paste0(options$treatment, "~", paste(options$confounders, collapse=" + ")))
   }
+  # treatment must be coded 0/1
+  .checkTreatmentCoding(dataset, all.vars(f[[2]])[1])
   #redefine distance to matchit syntax
   distance_lower=dplyr::case_when(stringr::str_to_lower(options$distance_dropdown)=='probability'~'glm',
                                   stringr::str_to_lower(options$distance_dropdown)=='logit'~'logit',

@@ -370,3 +370,12 @@ test_that("Matched dataset is saved with all columns and matching information", 
   expect_equal(sum(saved$treat == 1), 185)
   expect_null(results[["results"]][["saveDatasetNotice"]])
 })
+
+test_that("Matching requires a treatment coded 0/1", {
+  dataset <- utils::read.csv(testthat::test_path("lalonde.csv"))
+  dataset$treat <- dataset$treat + 1
+  options <- .defaultOptions("matching")
+  results <- jaspTools::runAnalysis("matching", dataset, options)
+  expect_identical(results[["status"]], "validationError")
+  expect_match(results[["results"]][["errorMessage"]], "must be coded 0 \\(untreated\\) and 1 \\(treated\\)")
+})

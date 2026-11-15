@@ -142,3 +142,12 @@ test_that("Weighted dataset is saved with all columns and the weights", {
   expect_equal(round(mean(saved$weight[saved$treat == 0]), 3), 1.441)
   expect_null(results[["results"]][["saveDatasetNotice"]])
 })
+
+test_that("IPTW requires a treatment coded 0/1", {
+  dataset <- utils::read.csv(testthat::test_path("lalonde.csv"))
+  dataset$treat <- dataset$treat + 1
+  options <- .defaultOptions("iptw")
+  results <- jaspTools::runAnalysis("iptw", dataset, options)
+  expect_identical(results[["status"]], "validationError")
+  expect_match(results[["results"]][["errorMessage"]], "must be coded 0 \\(untreated\\) and 1 \\(treated\\)")
+})
